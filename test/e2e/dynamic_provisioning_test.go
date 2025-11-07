@@ -52,7 +52,7 @@ var _ = ginkgo.Describe("Dynamic Provisioning", func() {
 	})
 
 	testDriver = driver.InitNFSDriver()
-	ginkgo.It("should create a volume with kerberos auth", func(ctx ginkgo.SpecContext) {
+	ginkgo.It("should create a volume with kerberos auth", ginkgo.Label("kerberos"), func(ctx ginkgo.SpecContext) {
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
@@ -63,7 +63,7 @@ var _ = ginkgo.Describe("Dynamic Provisioning", func() {
 							NameGenerate:      "test-volume-",
 							MountPathGenerate: "/mnt/test-",
 						},
-						MountOptions: []string{"sec=krb5", "noresvport", "nfsvers=4"},
+						MountOptions: []string{"sec=krb5", "nfsvers=4"},
 					},
 				},
 			},

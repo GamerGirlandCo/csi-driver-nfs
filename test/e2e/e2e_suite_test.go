@@ -19,6 +19,7 @@ package e2e
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -132,14 +133,14 @@ var _ = ginkgo.BeforeSuite(func() {
 	// install nfs server
 	installNFSServer := testCmd{
 		command:  "make",
-		args:     []string{"install-nfs-server"},
+		args:     []string{"install-nfs-server", "-e"},
 		startLog: "Installing NFS Server...",
 		endLog:   "NFS Server successfully installed",
 	}
 
 	e2eBootstrap := testCmd{
 		command:  "make",
-		args:     []string{"e2e-bootstrap"},
+		args:     []string{"e2e-bootstrap", "-e"},
 		startLog: "Installing NFS CSI Driver...",
 		endLog:   "NFS CSI Driver Installed",
 	}
@@ -217,8 +218,22 @@ func execTestCmd(cmds []testCmd) {
 		cmdSh := exec.Command(cmd.command, cmd.args...)
 		cmdSh.Dir = projectRoot
 		cmdSh.Stdout = os.Stdout
-		cmdSh.Stderr = os.Stderr
-		err = cmdSh.Run()
+		stderr, err := cmdSh.StderrPipe()
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		err = cmdSh.Start()
+			if err2 := cmdSh.Start(); err2 != nil {
+				bytes, err3 := io.ReadAll(stderr)
+				cmdSh.Wait()
+				if err2 == nil {
+					if err3 == nil {
+						fmt.Println(string(bytes))
+					}
+				}
+			}
+		if err != nil {
+			b, _ := io.ReadAll(stderr)
+			fmt.Println(string(b))
+		}
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		log.Println(cmd.endLog)
 	}

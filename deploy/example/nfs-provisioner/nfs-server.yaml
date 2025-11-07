@@ -34,17 +34,24 @@ spec:
       labels:
         app: nfs-server
     spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 65534
+        fsGroupChangePolicy: Always
       nodeSelector:
-        "kubernetes.io/os": linux
+        "kubernetes.io/os": linux 
       containers:
         - name: nfs-server
           image: itsthenetwork/nfs-server-alpine:latest
+          command: ["sh", "-c", "syslogd && mkdir $(SHARED_DIRECTORY) && mount --bind /fuck $(SHARED_DIRECTORY); nohup /usr/bin/nfsd.sh &>log & sleep 1h"]
           env:
             - name: SHARED_DIRECTORY
               value: "/exports"
           volumeMounts:
             - mountPath: /exports
               name: nfs-vol
+              readOnly: false
           securityContext:
             privileged: true
           ports:
@@ -57,5 +64,5 @@ spec:
       volumes:
         - name: nfs-vol
           hostPath:
-            path: /nfs-vol  # modify this to specify another path to store nfs share data
+            path: /srv/nfs-vol  # modify this to specify another path to store nfs share data
             type: DirectoryOrCreate

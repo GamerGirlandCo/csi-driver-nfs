@@ -19,6 +19,7 @@ package nfs
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
@@ -111,6 +112,9 @@ func (ns *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			}
 		}
 	}
+	klog.V(3).Infof("FLAGS -> %+v\n", mountOptions)
+	klog.V(3).Infof("SECRETS -> %+v", req.GetSecrets())
+	klog.V(3).Infof("KRB STUFF %s:%s", krbPrinc, krbPwd)
 
 	if server == "" {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("%v is a required parameter", paramServer))
@@ -164,7 +168,15 @@ func (ns *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			// obtain kerberos TGT
 			cmd := exec.CommandContext(ctx, "kinit", krbPrinc)
 			cmd.Stdin = bytes.NewBufferString(krbPwd + "\n")
-			if err := cmd.Run(); err != nil {
+			stdout, err2 := cmd.StdoutPipe()
+			if err := cmd.Start(); err != nil {
+				bytes, err3 := io.ReadAll(stdout)
+				cmd.Wait()
+				if err2 == nil {
+					if err3 == nil {
+						klog.Errorf("%s", string(bytes))
+					}
+				}
 				return err
 			}
 			// initialize credentials from keytab

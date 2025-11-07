@@ -502,6 +502,7 @@ func (cs *ControllerServer) internalMount(ctx context.Context, vol *nfsVolume, v
 	}
 
 	klog.V(2).Infof("internally mounting %s:%s at %s", vol.server, sharePath, targetPath)
+	klog.V(2).Infof("SECRETS -> %+v", secrets)
 	_, err := cs.Driver.ns.NodePublishVolume(ctx, &csi.NodePublishVolumeRequest{
 		TargetPath:       targetPath,
 		VolumeContext:    volContext,

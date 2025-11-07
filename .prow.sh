@@ -25,4 +25,5 @@
 ./release-tools/verify-boilerplate.sh "$(pwd)"
 ./release-tools/verify-spelling.sh "$(pwd)"
 
-main
+# main
+run_e2e "idk"

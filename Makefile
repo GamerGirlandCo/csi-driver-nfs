@@ -29,7 +29,7 @@ GIT_COMMIT = $(shell git rev-parse HEAD)
 BUILD_DATE = $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 IMAGE_VERSION ?= v4.13.0
 LDFLAGS = -X ${PKG}/pkg/nfs.driverVersion=${IMAGE_VERSION} -X ${PKG}/pkg/nfs.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/nfs.buildDate=${BUILD_DATE}
-EXT_LDFLAGS = -s -w -extldflags "-static"
+EXT_LDFLAGS = -extldflags "-static" 
 # Use a custom version for E2E tests if we are testing in CI
 ifdef CI
 ifndef PUBLISH
@@ -39,6 +39,7 @@ endif
 IMAGENAME ?= nfsplugin
 REGISTRY ?= andyzhangx
 REGISTRY_NAME ?= $(shell echo $(REGISTRY) | sed "s/.azurecr.io//g")
+IMAGE_NAME = $(REGISTRY)/$(IMAGENAME)
 IMAGE_TAG = $(REGISTRY)/$(IMAGENAME):$(IMAGE_VERSION)
 IMAGE_TAG_LATEST = $(REGISTRY)/$(IMAGENAME):latest
 
@@ -48,8 +49,8 @@ E2E_HELM_OPTIONS += ${EXTRA_HELM_OPTIONS}
 # Output type of docker buildx build
 OUTPUT_TYPE ?= docker
 
-ALL_ARCH.linux = arm64 amd64 ppc64le
-ALL_OS_ARCH = linux-arm64 linux-arm-v7 linux-amd64 linux-ppc64le
+ALL_ARCH.linux = amd64
+ALL_OS_ARCH = linux-amd64
 
 .EXPORT_ALL_VARIABLES:
 
@@ -82,9 +83,9 @@ nfs-armv7:
 
 .PHONY: container-build
 container-build:
-	docker buildx build --pull --output=type=$(OUTPUT_TYPE) --platform="linux/$(ARCH)" \
+	docker buildx build --output=type=$(OUTPUT_TYPE) --platform="linux/$(ARCH)" \
 		--provenance=false --sbom=false \
-		-t $(IMAGE_TAG)-linux-$(ARCH) --build-arg ARCH=$(ARCH) .
+		-t $(IMAGE_TAG)-linux-$(ARCH) -t $(IMAGE_TAG) --build-arg ARCH=$(ARCH) .
 
 .PHONY: container-linux-armv7
 container-linux-armv7:
@@ -101,11 +102,10 @@ container:
 	docker run --privileged --rm tonistiigi/binfmt --uninstall qemu-aarch64
 	docker run --rm --privileged tonistiigi/binfmt --install all
 	for arch in $(ALL_ARCH.linux); do \
-		ARCH=$${arch} $(MAKE) nfs; \
-		ARCH=$${arch} $(MAKE) container-build; \
+		true; \
 	done
-	$(MAKE) nfs-armv7
-	$(MAKE) container-linux-armv7
+# 	$(MAKE) nfs-armv7
+# 	$(MAKE) container-linux-armv7
 
 .PHONY: push
 push:
@@ -114,6 +114,9 @@ ifdef CI
 	docker manifest push --purge $(IMAGE_TAG)
 	docker manifest inspect $(IMAGE_TAG)
 else
+	$(info "PUSH HERE")
+	docker tag $(IMAGE_TAG_LATEST) $(IMAGE_TAG)
+	docker push $(IMAGE_TAG_LATEST)
 	docker push $(IMAGE_TAG)
 endif
 
@@ -141,8 +144,8 @@ install-helm:
 
 .PHONY: e2e-bootstrap
 e2e-bootstrap: install-helm
-	OUTPUT_TYPE=registry $(MAKE) container push
-	helm install csi-driver-nfs ./charts/latest/csi-driver-nfs --namespace kube-system --wait --timeout=15m -v=5 --debug \
+# 	OUTPUT_TYPE=registry $(MAKE) container push
+	helm install csi-driver-nfs ./charts/latest/csi-driver-nfs --wait --timeout=15m -v=5 --debug \
 		${E2E_HELM_OPTIONS} \
 		--set controller.logLevel=8 \
 		--set node.logLevel=8

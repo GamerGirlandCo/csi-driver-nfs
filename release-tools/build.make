@@ -95,7 +95,7 @@ $(CMDS:%=build-%): build-%: check-go-version-go
 		if ! [ $${#os_arch_seen_pre} = $${#os_arch_seen} ]; then \
 			continue; \
 		fi; \
-		if ! (set -x; cd ./$(CMDS_DIR)/$* && CGO_ENABLED=0 GOOS="$$os" GOARCH="$$arch" go build $(GOFLAGS_VENDOR) -a -ldflags '$(FULL_LDFLAGS)' -o "$(abspath ./bin)/$*$$suffix" .); then \
+		if ! (set -x; cd ./$(CMDS_DIR)/$* && CGO_ENABLED=0 GOOS="$$os" GOARCH="$$arch" go build -gcflags="all=-N -l" $(GOFLAGS_VENDOR) -v -a -ldflags '$(FULL_LDFLAGS)' -o "$(abspath ./bin)/$*$$suffix" .); then \
 			echo "Building $* for GOOS=$$os GOARCH=$$arch failed, see error(s) above."; \
 			exit 1; \
 		fi; \
@@ -103,12 +103,12 @@ $(CMDS:%=build-%): build-%: check-go-version-go
 	done
 
 $(CMDS:%=container-%): container-%: build-%
-	docker build -t $*:latest -f $(shell if [ -e ./$(CMDS_DIR)/$*/Dockerfile ]; then echo ./$(CMDS_DIR)/$*/Dockerfile; else echo Dockerfile; fi) --label revision=$(REV) .
+	docker build -t $(IMAGE_NAME):latest -f $(shell if [ -e ./$(CMDS_DIR)/$*/Dockerfile ]; then echo ./$(CMDS_DIR)/$*/Dockerfile; else echo Dockerfile; fi) --label revision=$(REV) .
 
 $(CMDS:%=push-%): push-%: container-%
 	set -ex; \
 	push_image () { \
-		docker tag $*:latest $(IMAGE_NAME):$$tag; \
+		docker tag $(IMAGE_NAME):latest $(IMAGE_NAME):$$tag; \
 		docker push $(IMAGE_NAME):$$tag; \
 	}; \
 	for tag in $(IMAGE_TAGS); do \

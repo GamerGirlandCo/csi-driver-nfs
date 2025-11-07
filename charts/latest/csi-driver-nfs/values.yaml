@@ -2,9 +2,9 @@ customLabels: {}
 image:
     baseRepo: registry.k8s.io
     nfs:
-        repository: gcr.io/k8s-staging-sig-storage/nfsplugin
-        tag: canary
-        pullPolicy: IfNotPresent
+        repository: pcr.celtrackr.com/nfs-csi/nfsplugin
+        tag: latest
+        pullPolicy: Always
     csiProvisioner:
         repository: registry.k8s.io/sig-storage/csi-provisioner
         tag: v5.3.0
@@ -170,8 +170,8 @@ volumeSnapshotClass:
 ## Reference to one or more secrets to be used when pulling images
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 ##
-imagePullSecrets: []
-# - name: "image-pull-secret"
+imagePullSecrets: 
+ - name: regcred
 
 ## StorageClass resource example:
 storageClass:

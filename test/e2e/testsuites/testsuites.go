@@ -527,6 +527,12 @@ func pollForStringInPodsExec(namespace string, pods []string, command []string, 
 
 func pollForStringWorker(namespace string, pod string, command []string, expectedString string, ch chan<- error) {
 	args := append([]string{"exec", pod, "--"}, command...)
+	{
+		stdout, err := e2ekubectl.RunKubectl(v1.NamespaceAll, "auth", "whoami")
+		if err == nil {
+			fmt.Println(string(stdout))
+		}
+	}
 	err := wait.PollImmediate(poll, pollForStringTimeout, func() (bool, error) { // nolint
 		stdout, err := e2ekubectl.RunKubectl(namespace, args...)
 		if err != nil {
