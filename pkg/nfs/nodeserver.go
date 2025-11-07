@@ -162,6 +162,7 @@ func (ns *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 				cmd := exec.CommandContext(ctx, "ktutil")
 				cmd.Stdin = bytes.NewBufferString(fmt.Sprintf("addent -p %s -password -k 1 -f\n%s\nwkt /etc/krb5.keytab", krbPrinc, krbPwd))
 				if err := cmd.Run(); err != nil {
+					klog.Errorf("error running 'ktutil': %+v", err)
 					return err
 				}
 			}
@@ -180,12 +181,9 @@ func (ns *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 				return err
 			}
 			// initialize credentials from keytab
-			cmd = exec.CommandContext(ctx, "kinit", "-k", krbPrinc)
-			if err != nil {
-				return err
-			}
+			cmd = exec.CommandContext(ctx, "kinit", "-k", krbPrinc)	
 			if err := cmd.Run(); err != nil {
-				klog.Errorf("%+v", err)
+				klog.Errorf("error running 'kinit -k': %+v", err)
 				return err
 			}
 		}
