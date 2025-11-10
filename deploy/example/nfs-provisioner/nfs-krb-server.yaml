@@ -71,7 +71,7 @@ spec:
               protocol: UDP
             - name: tcp-111
               containerPort: 111
-              protocol: UDP
+              protocol: TCP
             - name: tcp-88
               containerPort: 88
               protocol: TCP
