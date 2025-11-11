@@ -48,7 +48,7 @@ spec:
           command:
             - bash
             - -c
-            - "./init.sh & tail -f /var/log/messages /var/log/rpc-gssd.log /var/log/gssd.log"
+            - "./init.sh & sleep 10; tail -f /var/log/messages /var/log/rpc-gssd.log /var/log/gssd.log"
           env:
             - name: SHARED_DIRECTORY
               value: "/srv/shared"
