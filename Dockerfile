@@ -18,7 +18,7 @@ ARG ARCH
 ARG binary=./bin/${ARCH}/nfsplugin
 COPY ${binary} /nfsplugin
 
-RUN apt update && apt upgrade -y && apt-mark unhold libcap2 && apt-get install -y --reinstall --purge ca-certificates mount nfs-common netbase krb5-user lsb-base bash
+RUN apt update && apt upgrade -y && apt-mark unhold libcap2 && apt-get install -y --reinstall --purge ca-certificates mount nfs-common netbase krb5-user lsb-base bash net-tools iputils-ping dnsutils
 
 RUN cat > /etc/default/nfs-common <<EOC
 NEED_STATD=yes
